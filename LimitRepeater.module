@@ -23,7 +23,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Limit Repeater',
-			'version' => 1,
+			'version' => 2,
 			'summary' => 'Allows limits and restrictions to be placed on selected Repeater fields.',
 			'autoload' => "template=admin",
 			'icon' => 'list',
