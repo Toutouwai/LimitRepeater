@@ -23,7 +23,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Limit Repeater',
-			'version' => 2,
+			'version' => 3,
 			'summary' => 'Allows limits and restrictions to be placed on selected Repeater fields.',
 			'autoload' => "template=admin",
 			'icon' => 'list',
@@ -36,6 +36,25 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public function ___install() {
 		// create one row code to get things started
 		$this->modules->saveModuleConfigData($this->className, array('codes' => uniqid() . '|') );
+	}
+
+	/**
+	 * Upgrade
+	 */
+	public function ___upgrade($fromVersion, $toVersion) {
+		// Upgrade from < v0.0.3
+		if($fromVersion < 3) {
+			// get existing config
+			$cfg = $this->modules->getModuleConfigData($this->className());
+			// convert roles field value to array
+			foreach($cfg as $key => $value) {
+				if(substr($key, 0, 4) === "role") {
+					$cfg[$key] = array($value);
+				}
+			}
+			// save config
+			$this->modules->saveModuleConfigData($this->className, $cfg);
+		}
 	}
 
 	/**
@@ -64,11 +83,10 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public function userBodyClasses($event) {
 		$object = $event->object;
 		$user = $this->user;
+		if(!$user->isSuperuser()) $object->addBodyClass('role-nonsuperuser');
 		foreach($user->roles as $role) {
 			$object->addBodyClass("role-{$role->name}");
 		}
-		if(!$user->isSuperuser()) $object->addBodyClass("role-nonsuperuser");
-		$object->addBodyClass("user-{$user->name}");
 	}
 
 	/**
@@ -76,45 +94,42 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	 */
 	public function appendToField($event) {
 		$inputfield = $event->object;
-		$wrap_attr = $inputfield->wrapAttr();
-		$container_id = $wrap_attr['data-page'];
-		$f_name = $inputfield->name;
-		$str = "_repeater{$container_id}";
-		$str_length = strlen($str);
-		$repeater_suffix = '';
-		// correct for when field name has repeater suffix (field is inside another repeater)
-		// matches $str at end of $f_name
-		if(substr($f_name, -$str_length) === $str) {
-			$f_name = substr($f_name, 0, -$str_length);
-			$repeater_suffix = $str;
+		$if_name = $inputfield->name;
+		$field = $this->fields->get($if_name);
+		if(!$field) {
+			$name = substr($if_name, 0, strpos($if_name, '_repeater'));
+			$field = $this->fields->get($name);
 		}
+		if(!$field) return;
+		$f_name = $field->name;
 
-		$cfg =  $this->modules->getModuleConfigData($this->className());
+		$cfg = $this->modules->getModuleConfigData($this->className());
 		// early return if field is not in module config
 		if(!in_array($f_name, $cfg)) return;
 
 		$uniques = array();
 		foreach($cfg as $key => $value) {
-		    if($value === $f_name) {
-			    $uniques[] = substr($key, -13); // last 13 characters are the unique code
-		    }
+			if($value === $f_name) {
+				$uniques[] = substr($key, -13); // last 13 characters are the unique code
+			}
 		}
 		$out = '';
 		$css = '';
 		$call_checkRepeater = '';
 		foreach($uniques as $unique) {
 			if(!$cfg["role_{$unique}"]) continue; // role must not be empty
-			$direct = ' > div > ul > li > label';
-			$r_class = '.Inputfield_' . $cfg["repeater_{$unique}"] . $repeater_suffix;
-			$role_class = $cfg["role_{$unique}"] ? '.' . $cfg["role_{$unique}"] : '';
-			$prefix = "body$role_class $r_class $direct";
-			if($cfg["nodrag_{$unique}"]) $css .= "$prefix .InputfieldRepeaterDrag, ";
-			if($cfg["notoggle_{$unique}"]) $css .= "$prefix .InputfieldRepeaterToggle, ";
-			if($cfg["notrash_{$unique}"]) $css .= "$prefix .InputfieldRepeaterTrash, ";
-			$css = rtrim($css, ', ');
-			if($css) $css .= " { display:none !important; }" ;
-			$limit = $cfg["limit_{$unique}"];
-			if($limit) $call_checkRepeater .= "checkRepeater('$role_class', '$r_class', '$limit');";
+			foreach($cfg["role_{$unique}"] as $role) {
+				$direct = ' > div > ul > li > label';
+				$role_class = $role === 'role-all' ? '' : ".$role";
+				$prefix = "body$role_class .Inputfield_{$if_name} $direct";
+				if ($cfg["nodrag_{$unique}"]) $css .= "$prefix .InputfieldRepeaterDrag, ";
+				if ($cfg["notoggle_{$unique}"]) $css .= "$prefix .InputfieldRepeaterToggle, ";
+				if ($cfg["notrash_{$unique}"]) $css .= "$prefix .InputfieldRepeaterTrash, ";
+				$css = rtrim($css, ', ');
+				if ($css) $css .= " { display:none !important; }";
+				$limit = $cfg["limit_{$unique}"];
+				if($limit) $call_checkRepeater .= "checkRepeater('$role_class', '.Inputfield_{$if_name}', $limit);";
+			}
 		}
 		if($css) $out .= "<style>$css</style>";
 		if($call_checkRepeater) {
@@ -259,7 +274,7 @@ $(function() {
 	 * Make fieldset
 	 */
 	public function makeFieldset($identifier, $number) {
-		$fieldset = $this->modules->get("InputfieldFieldset");
+		$fieldset = $this->modules->get('InputfieldFieldset');
 		$fieldset->name = "row_{$identifier}";
 		$fieldset->label = $this->_('Limited Repeater') . " $number";
 
@@ -305,8 +320,10 @@ $(function() {
 		$f = $this->modules->get('InputfieldSelect');
 		$f->name = $f_name;
 		$f->label = $this->_('Repeater field');
+		$f->required = true;
 		$f->columnWidth = 50;
 		$select_options = $this->fields->find("type=FieldtypeRepeater");
+		$f->addOption(''); // first item blank
 		foreach($select_options as $select_option) {
 			$f->addOption($select_option->name, $select_option->label ?: $select_option->name);
 		}
@@ -315,19 +332,21 @@ $(function() {
 	}
 
 	/**
-	 * Make select for Role
+	 * Make AsmSelect for roles
 	 */
 	public function makeRolesSelect($identifier) {
 		$f_name = "role_{$identifier}";
-		$f = $this->modules->get('InputfieldSelect');
+		$f = $this->modules->get('InputfieldAsmSelect');
 		$f->name = $f_name;
 		$f->label = $this->_('Role to restrict');
+		$f->required = true;
 		$f->columnWidth = 50;
-		$roles = $this->roles->find("name!=guest|superuser");
+		$roles = $this->roles->find("name!=guest");
 		foreach($roles as $select_option) {
 			$f->addOption("role-{$select_option->name}", $select_option->name);
 		}
-		$f->addOption('role-nonsuperuser', 'All non-superuser roles');
+		$f->addOption('role-nonsuperuser', $this->_('All non-superuser roles'));
+		$f->addOption('role-all', $this->_('All roles'));
 		$f->value = $this->$f_name;
 		return $f;
 	}
