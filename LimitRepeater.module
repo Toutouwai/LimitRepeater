@@ -338,7 +338,7 @@ $(function() {
 		$f_name = "role_{$identifier}";
 		$f = $this->modules->get('InputfieldAsmSelect');
 		$f->name = $f_name;
-		$f->label = $this->_('Role to restrict');
+		$f->label = $this->_('Roles to restrict');
 		$f->required = true;
 		$f->columnWidth = 50;
 		$roles = $this->roles->find("name!=guest");
