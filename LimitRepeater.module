@@ -23,7 +23,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Limit Repeater',
-			'version' => 3,
+			'version' => 4,
 			'summary' => 'Allows limits and restrictions to be placed on selected Repeater fields.',
 			'autoload' => "template=admin",
 			'icon' => 'list',
@@ -123,6 +123,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 				$role_class = $role === 'role-all' ? '' : ".$role";
 				$prefix = "body$role_class .Inputfield_{$if_name} $direct";
 				if ($cfg["nodrag_{$unique}"]) $css .= "$prefix .InputfieldRepeaterDrag, ";
+				if ($cfg["noclone_{$unique}"]) $css .= "$prefix .InputfieldRepeaterClone, ";
 				if ($cfg["notoggle_{$unique}"]) $css .= "$prefix .InputfieldRepeaterToggle, ";
 				if ($cfg["notrash_{$unique}"]) $css .= "$prefix .InputfieldRepeaterTrash, ";
 				$css = rtrim($css, ', ');
@@ -287,6 +288,9 @@ $(function() {
 		$f = $this->makeNoDragCheckbox($identifier);
 		$fieldset->add($f);
 
+		$f = $this->makeNoCloneCheckbox($identifier);
+		$fieldset->add($f);
+
 		$f = $this->makeNoToggleCheckbox($identifier);
 		$fieldset->add($f);
 
@@ -359,7 +363,20 @@ $(function() {
 		$f = $this->modules->get('InputfieldCheckbox');
 		$f->name = $f_name;
 		$f->label = $this->_('Prevent drag');
-		$f->columnWidth = 25;
+		$f->columnWidth = 20;
+		$f->attr("checked", $this->$f_name === 1 ? "checked" : "");
+		return $f;
+	}
+
+	/**
+	 * Make checkbox for "No Clone" option
+	 */
+	public function makeNoCloneCheckbox($identifier) {
+		$f_name = "noclone_{$identifier}";
+		$f = $this->modules->get('InputfieldCheckbox');
+		$f->name = $f_name;
+		$f->label = $this->_('Prevent clone');
+		$f->columnWidth = 20;
 		$f->attr("checked", $this->$f_name === 1 ? "checked" : "");
 		return $f;
 	}
@@ -372,7 +389,7 @@ $(function() {
 		$f = $this->modules->get('InputfieldCheckbox');
 		$f->name = $f_name;
 		$f->label = $this->_('Prevent publish toggle');
-		$f->columnWidth = 25;
+		$f->columnWidth = 20;
 		$f->attr("checked", $this->$f_name === 1 ? "checked" : "");
 		return $f;
 	}
@@ -385,7 +402,7 @@ $(function() {
 		$f = $this->modules->get('InputfieldCheckbox');
 		$f->name = $f_name;
 		$f->label = $this->_('Prevent trash');
-		$f->columnWidth = 25;
+		$f->columnWidth = 20;
 		$f->attr("checked", $this->$f_name === 1 ? "checked" : "");
 		return $f;
 	}
@@ -398,7 +415,7 @@ $(function() {
 		$f = $this->modules->get('InputfieldInteger');
 		$f->name = $f_name;
 		$f->label = $this->_('Limit');
-		$f->columnWidth = 25;
+		$f->columnWidth = 20;
 		$f->inputType = 'number';
 		$f->min = 0;
 		$f->max = 200;
