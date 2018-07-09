@@ -25,6 +25,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 			'title' => 'Limit Repeater',
 			'version' => 4,
 			'summary' => 'Allows limits and restrictions to be placed on selected Repeater fields.',
+			'author' => 'Robin Sallis',
 			'autoload' => "template=admin",
 			'icon' => 'list',
 		);
@@ -63,7 +64,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public function ready() {
 		// add css and js for module config page
 		$info = $this->getModuleInfo();
-		$version = (int) $info['version'];
+		$version = $info['version'];
 		$config = $this->config;
 		if($this->input->get->name == $this->className) {
 			$config->styles->add($config->urls->{$this->className} . "module_config.css?v=$version");
@@ -122,12 +123,12 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 				$direct = ' > div > ul > li > label';
 				$role_class = $role === 'role-all' ? '' : ".$role";
 				$prefix = "body$role_class .Inputfield_{$if_name} $direct";
-				if ($cfg["nodrag_{$unique}"]) $css .= "$prefix .InputfieldRepeaterDrag, ";
-				if ($cfg["noclone_{$unique}"]) $css .= "$prefix .InputfieldRepeaterClone, ";
-				if ($cfg["notoggle_{$unique}"]) $css .= "$prefix .InputfieldRepeaterToggle, ";
-				if ($cfg["notrash_{$unique}"]) $css .= "$prefix .InputfieldRepeaterTrash, ";
+				if($cfg["nodrag_{$unique}"]) $css .= "$prefix .InputfieldRepeaterDrag, ";
+				if($cfg["noclone_{$unique}"]) $css .= "$prefix .InputfieldRepeaterClone, ";
+				if($cfg["notoggle_{$unique}"]) $css .= "$prefix .InputfieldRepeaterToggle, ";
+				if($cfg["notrash_{$unique}"]) $css .= "$prefix .InputfieldRepeaterTrash, ";
 				$css = rtrim($css, ', ');
-				if ($css) $css .= " { display:none !important; }";
+				if($css) $css .= " { display:none !important; }";
 				$limit = $cfg["limit_{$unique}"];
 				if($limit) $call_checkRepeater .= "checkRepeater('$role_class', '.Inputfield_{$if_name}', $limit);";
 			}
