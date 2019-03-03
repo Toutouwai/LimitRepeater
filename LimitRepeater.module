@@ -23,7 +23,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Limit Repeater',
-			'version' => '0.1.5',
+			'version' => '0.1.6',
 			'summary' => 'Allows limits and restrictions to be placed on selected Repeater fields.',
 			'author' => 'Robin Sallis',
 			'autoload' => "template=admin",
@@ -130,7 +130,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 				$css = rtrim($css, ', ');
 				if($css) $css .= " { display:none !important; }";
 				$limit = $cfg["limit_{$unique}"];
-				if($limit) $call_checkRepeater .= "checkRepeater('$role_class', '.Inputfield_{$if_name}', $limit);";
+				if($limit !== '') $call_checkRepeater .= "checkRepeater('$role_class', '.Inputfield_{$if_name}', $limit);";
 			}
 		}
 		if($css) $out .= "<style>$css</style>";
