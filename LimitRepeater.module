@@ -23,7 +23,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Limit Repeater',
-			'version' => '0.1.6',
+			'version' => '0.1.7',
 			'summary' => 'Allows limits and restrictions to be placed on selected Repeater fields.',
 			'author' => 'Robin Sallis',
 			'autoload' => "template=admin",
@@ -95,6 +95,8 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	 */
 	public function appendToField($event) {
 		$inputfield = $event->object;
+		// Return early if this is not a standard Repeater field
+		if($inputfield->className !== 'InputfieldRepeater') return;
 		$if_name = $inputfield->name;
 		$field = $this->fields->get($if_name);
 		if(!$field) {
@@ -138,7 +140,9 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 			$out .= "
 <script>
 $(function() {
-	$call_checkRepeater
+	$(document).ready(function() {
+		$call_checkRepeater
+	});
 	$(document).ajaxComplete(function() {
 		$call_checkRepeater
 	});
@@ -155,10 +159,6 @@ $(function() {
 	public function addScriptStyles($event) {
 		// return if ProcessPageEdit is being loaded via AJAX (image field)
 		if($this->config->ajax) return;
-
-		$page = $event->object->getPage();
-		$count = $page->fields->find('type=FieldtypeRepeater')->count();
-		if(!$count) return; // early return if no Repeaters on this page
 
 		// add JS function
 		$config = $this->config;
