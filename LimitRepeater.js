@@ -1,10 +1,15 @@
-function checkRepeater(role_class, inputfield_class, limit) {
-	if(!inputfield_class) return;
-	var $repeater_items = $('body' + role_class + ' ' + inputfield_class + ' .InputfieldRepeaterItem').not('.InputfieldRepeaterNewItem');
-	var $add_button = $('body' + role_class + ' ' + inputfield_class + ' > div > .InputfieldRepeaterAddItem');
+function checkRepeater(inputfield_class, limit, limit_clone) {
+	var $inputfield_content = $(inputfield_class + ' > .InputfieldContent');
+	var $repeater_items = $inputfield_content.find('> .Inputfields > .InputfieldRepeaterItem').not('.InputfieldRepeaterNewItem');
+	var $add_button = $inputfield_content.find('> .InputfieldRepeaterAddItem');
+	var $insert_buttons = $repeater_items.find('> .InputfieldHeader').find('.InputfieldRepeaterInsertAfter, .InputfieldRepeaterInsertBefore');
 	if($repeater_items.length >= limit) {
-		$add_button.addClass('button-hide');
+		if(limit_clone) $repeater_items.find('> .InputfieldHeader .InputfieldRepeaterClone').hide();
+		$add_button.removeClass('lr-show');
+		$insert_buttons.hide();
 	} else {
-		$add_button.removeClass('button-hide');
+		if(limit_clone) $repeater_items.find('> .InputfieldHeader .InputfieldRepeaterClone').show();
+		$add_button.addClass('lr-show');
+		$insert_buttons.show();
 	}
 }
