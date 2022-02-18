@@ -8,7 +8,7 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Limit Repeater',
-			'version' => '0.2.1',
+			'version' => '0.2.2',
 			'summary' => 'Allows restrictions and limits to be placed on Repeater fields.',
 			'author' => 'Robin Sallis',
 			'href' => 'https://github.com/Toutouwai/LimitRepeater',
@@ -64,6 +64,9 @@ class LimitRepeater extends WireData implements Module, ConfigurableModule {
 		$field = $event->arguments(0);
 		$wrapper = $event->return;
 		$modules = $this->wire()->modules;
+
+		// Return early if this is not a Repeater field (e.g. RepeaterMatrix)
+		if($field->type != 'FieldtypeRepeater') return;
 
 		// Create fieldset
 		/* @var InputfieldFieldset $fieldset */
